@@ -12,6 +12,7 @@ object frmMain: TfrmMain
   Font.Name = 'Segoe UI'
   Font.Style = []
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   TextHeight = 15
   object pnlClient: TPanel
     Left = 0
@@ -22,7 +23,8 @@ object frmMain: TfrmMain
     BevelOuter = bvNone
     ParentBackground = False
     TabOrder = 0
-    ExplicitLeft = 8
+    ExplicitWidth = 1012
+    ExplicitHeight = 596
     object Splitter1: TSplitter
       Left = 0
       Top = 397
@@ -46,7 +48,8 @@ object frmMain: TfrmMain
       Font.Style = []
       ParentFont = False
       TabOrder = 0
-      ExplicitTop = 399
+      ExplicitTop = 382
+      ExplicitWidth = 1012
     end
     object pnlNetwork: TPanel
       Left = 0
@@ -58,9 +61,7 @@ object frmMain: TfrmMain
       Caption = 'pnlNetwork'
       ParentBackground = False
       TabOrder = 1
-      ExplicitLeft = 248
-      ExplicitTop = 9
-      ExplicitHeight = 385
+      ExplicitHeight = 379
       object lstNetwork: TListBox
         Left = 0
         Top = 47
@@ -71,8 +72,7 @@ object frmMain: TfrmMain
         BevelInner = bvNone
         ItemHeight = 15
         TabOrder = 0
-        ExplicitLeft = -6
-        ExplicitHeight = 353
+        ExplicitHeight = 332
       end
       object btnNewConnection: TButton
         Left = 8
@@ -92,16 +92,16 @@ object frmMain: TfrmMain
       ActivePage = tsAbout
       Align = alClient
       TabOrder = 2
-      ExplicitLeft = -268
-      ExplicitHeight = 400
+      ExplicitWidth = 882
+      ExplicitHeight = 379
       object tsAbout: TTabSheet
         Caption = 'About NATS.Delphi'
         DesignSize = (
           884
           367)
         object imgNatsDelphi: TImage
-          Left = 128
-          Top = 76
+          Left = 126
+          Top = 77
           Width = 600
           Height = 200
           Anchors = []
@@ -2294,8 +2294,34 @@ object frmMain: TfrmMain
             10044110E4C70505D6CF04558169B1D23346AC10044110E4DF070A2C04411004
             41903B0C0A2C0441100441903BCCFF03E2EB6627A92F914D0000000049454E44
             AE426082}
+          ExplicitLeft = 128
+          ExplicitTop = 76
+        end
+        object Button1: TButton
+          Left = 64
+          Top = 296
+          Width = 75
+          Height = 25
+          Caption = 'Button1'
+          TabOrder = 0
+          OnClick = Button1Click
+        end
+        object Button2: TButton
+          Left = 192
+          Top = 296
+          Width = 75
+          Height = 25
+          Caption = 'Button2'
+          TabOrder = 1
+          OnClick = Button2Click
         end
       end
     end
+  end
+  object Timer1: TTimer
+    Interval = 10000
+    OnTimer = Timer1Timer
+    Left = 526
+    Top = 370
   end
 end

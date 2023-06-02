@@ -1,30 +1,31 @@
-{******************************************************************************}
-{                                                                              }
-{  NATS.Delphi: Delphi Client Library for NATS                                 }
-{  Copyright (c) 2022 Paolo Rossi                                              }
-{  https://github.com/paolo-rossi/nats.delphi                                  }
-{                                                                              }
-{******************************************************************************}
-{                                                                              }
-{  Licensed under the Apache License, Version 2.0 (the "License");             }
-{  you may not use this file except in compliance with the License.            }
-{  You may obtain a copy of the License at                                     }
-{                                                                              }
-{      http://www.apache.org/licenses/LICENSE-2.0                              }
-{                                                                              }
-{  Unless required by applicable law or agreed to in writing, software         }
-{  distributed under the License is distributed on an "AS IS" BASIS,           }
-{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    }
-{  See the License for the specific language governing permissions and         }
-{  limitations under the License.                                              }
-{                                                                              }
-{******************************************************************************}
+{ ****************************************************************************** }
+{ }
+{ NATS.Delphi: Delphi Client Library for NATS }
+{ Copyright (c) 2022 Paolo Rossi }
+{ https://github.com/paolo-rossi/nats.delphi }
+{ }
+{ ****************************************************************************** }
+{ }
+{ Licensed under the Apache License, Version 2.0 (the "License"); }
+{ you may not use this file except in compliance with the License. }
+{ You may obtain a copy of the License at }
+{ }
+{ http://www.apache.org/licenses/LICENSE-2.0 }
+{ }
+{ Unless required by applicable law or agreed to in writing, software }
+{ distributed under the License is distributed on an "AS IS" BASIS, }
+{ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{ See the License for the specific language governing permissions and }
+{ limitations under the License. }
+{ }
+{ ****************************************************************************** }
 unit Demo.Form.Connection;
 
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
 
   Nats.Consts,
@@ -70,7 +71,8 @@ type
     procedure LogFmt(const AMessage: string; const Args: array of const);
     procedure SetParams(AParams: TArray<string>);
   public
-    class function CreateAndShow(const AName: string; AParent: TWinControl; ALog: TStrings): TfrmConnection;
+    class function CreateAndShow(const AName: string; AParent: TWinControl;
+      ALog: TStrings): TfrmConnection;
     procedure RefreshLists;
     property Connection: TNatsConnection read FConnection write FConnection;
   end;
@@ -91,8 +93,7 @@ procedure TfrmConnection.btnSimpleRequestClick(Sender: TObject);
 var
   LHandler: TNatsMsgHandler;
 begin
-  LHandler :=
-    procedure (const AMsg: TNatsArgsMSG)
+  LHandler := procedure(const AMsg: TNatsArgsMSG)
     begin
       // Code to handle the received response
       // **Remember, your code here must be thread safe!
@@ -105,11 +106,11 @@ procedure TfrmConnection.btnSimpleSubscribeClick(Sender: TObject);
 var
   LHandler: TNatsMsgHandler;
 begin
-  LHandler :=
-    procedure (const AMsg: TNatsArgsMSG)
+  LHandler := procedure(const AMsg: TNatsArgsMSG)
     begin
       // Code to handle received Msg with subject "mysubject"
       // **Remember, your code here must be thread safe!
+      LogFmt('MSG <- %s: %s', [AMsg.Subject, AMsg.Payload]);
     end;
 
   FConnection.Subscribe('mysubject', LHandler);
@@ -126,87 +127,75 @@ var
 begin
   case lstCommandList.ItemIndex of
     0: // Publish
-    begin
-      FConnection.Publish(
-        lstCommandParams.Values['Subject'],
-        lstCommandParams.Values['Message']
-      );
-    end;
+      begin
+        FConnection.Publish(lstCommandParams.Values['Subject'],
+          lstCommandParams.Values['Message']);
+      end;
     1: // Request
-    begin
-      LOptPar := lstCommandParams.Values['Message*'];
-      if LOptPar.IsEmpty then
-        FConnection.Request(
-          lstCommandParams.Values['Subject'],
-          procedure (const AMsg: TNatsArgsMSG)
-          begin
-            TThread.Queue(TThread.Current,
-              procedure
-              begin
-                LogFmt('RES <- (%s) %s: %s', [AMsg.ReplyTo, AMsg.Subject, AMsg.Payload]);
-              end
-            );
-          end
-        )
-      else
-        FConnection.Request(
-          lstCommandParams.Values['Subject'],
-          LOptPar,
-          procedure (const AMsg: TNatsArgsMSG)
-          begin
-            TThread.Queue(TThread.Current,
-              procedure
-              begin
-                LogFmt('RES <- (%s) %s: %s', [AMsg.ReplyTo, AMsg.Subject, AMsg.Payload]);
-              end
-            );
-          end
-        );
-    end;
+      begin
+        LOptPar := lstCommandParams.Values['Message*'];
+        if LOptPar.IsEmpty then
+          FConnection.Request(lstCommandParams.Values['Subject'],
+            procedure(const AMsg: TNatsArgsMSG)
+            begin
+              TThread.Queue(TThread.Current,
+                procedure
+                begin
+                  LogFmt('RES <- (%s) %s: %s', [AMsg.ReplyTo, AMsg.Subject,
+                    AMsg.Payload]);
+                end);
+            end)
+        else
+          FConnection.Request(lstCommandParams.Values['Subject'], LOptPar,
+            procedure(const AMsg: TNatsArgsMSG)
+            begin
+              TThread.Queue(TThread.Current,
+                procedure
+                begin
+                  LogFmt('RES <- (%s) %s: %s', [AMsg.ReplyTo, AMsg.Subject,
+                    AMsg.Payload]);
+                end);
+            end);
+      end;
     2: // Subscribe
-    begin
-      LOptPar := lstCommandParams.Values['Queue*'];
-      if LOptPar.IsEmpty then
-        FConnection.Subscribe(
-          lstCommandParams.Values['Subject'],
-          procedure (const AMsg: TNatsArgsMSG)
-          begin
-            TThread.Queue(TThread.Current,
-              procedure
-              begin
-                if not AMsg.ReplyTo.IsEmpty then
-                  FConnection.Publish(AMsg.ReplyTo, 'Yes, I can help!');
+      begin
+        LOptPar := lstCommandParams.Values['Queue*'];
+        if LOptPar.IsEmpty then
+          FConnection.Subscribe(lstCommandParams.Values['Subject'],
+            procedure(const AMsg: TNatsArgsMSG)
+            begin
+              TThread.Queue(TThread.Current,
+                procedure
+                begin
+                  if not AMsg.ReplyTo.IsEmpty then
+                    FConnection.Publish(AMsg.ReplyTo, 'Yes, I can help!');
 
-                LogFmt('MSG <- %s: %s', [AMsg.Subject, AMsg.Payload]);
-              end
-            );
-          end
-        )
-      else
-        FConnection.Subscribe(
-          lstCommandParams.Values['Subject'], LOptPar,
-          procedure (const AMsg: TNatsArgsMSG)
-          begin
-            TThread.Queue(TThread.Current,
-              procedure
-              begin
-                if not AMsg.ReplyTo.IsEmpty then
-                  FConnection.Publish(AMsg.ReplyTo, 'Yes, I can help!');
+                  LogFmt('MSG <- %s: %s', [AMsg.Subject, AMsg.Payload]);
+                end);
+            end)
+        else
+          FConnection.Subscribe(lstCommandParams.Values['Subject'], LOptPar,
+            procedure(const AMsg: TNatsArgsMSG)
+            begin
+              TThread.Queue(TThread.Current,
+                procedure
+                begin
+                  if not AMsg.ReplyTo.IsEmpty then
+                    FConnection.Publish(AMsg.ReplyTo, 'Yes, I can help!');
 
-                LogFmt('MSG <- %s: %s', [AMsg.Subject, AMsg.Payload]);
-              end
-            );
-          end
-        )
-    end;
+                  LogFmt('MSG <- %s: %s', [AMsg.Subject, AMsg.Payload]);
+                end);
+            end)
+      end;
     3: // Unsubscribe
-    begin
-      LOptPar := lstCommandParams.Values['Max*'];
-      if LOptPar.IsEmpty then
-        FConnection.Unsubscribe(lstCommandParams.Values['Id'].ToInteger)
-      else
-        FConnection.Unsubscribe(lstCommandParams.Values['Id'].ToInteger, LOptPar.ToInteger);
-    end;
+      begin
+        LOptPar := lstCommandParams.Values['Max*'];
+        if LOptPar.IsEmpty then
+          FConnection.Unsubscribe(lstCommandParams.Values['Id'].ToInteger)
+        else
+          FConnection.Unsubscribe(lstCommandParams.Values['Id'].ToInteger,
+            LOptPar.ToInteger);
+      end;
   end;
   RefreshLists;
 end;
@@ -218,14 +207,12 @@ end;
 
 procedure TfrmConnection.Log(const AMessage: string);
 begin
-  FLog.Add(Format('%s [%s]: %s', [
-    FormatDateTime('hh:nn:ss.zzz', Now),
-    FConnection.Name,
-    AMessage])
-  );
+  FLog.Add(Format('%s [%s]: %s', [FormatDateTime('hh:nn:ss.zzz', Now),
+    FConnection.Name, AMessage]));
 end;
 
-procedure TfrmConnection.LogFmt(const AMessage: string; const Args: array of const);
+procedure TfrmConnection.LogFmt(const AMessage: string;
+const Args: array of const);
 begin
   Log(Format(AMessage, Args));
 end;
@@ -235,7 +222,8 @@ begin
   FConnection := TNatsConnection.Create;
 end;
 
-class function TfrmConnection.CreateAndShow(const AName: string; AParent: TWinControl; ALog: TStrings): TfrmConnection;
+class function TfrmConnection.CreateAndShow(const AName: string;
+AParent: TWinControl; ALog: TStrings): TfrmConnection;
 begin
   Result := TfrmConnection.Create(AParent);
   try
@@ -256,22 +244,22 @@ end;
 procedure TfrmConnection.lstCommandListClick(Sender: TObject);
 begin
   case lstCommandList.ItemIndex of
-     0: // Publish
-     begin
-       SetParams(['Subject', 'Message']);
-     end;
-     1: // Request
-     begin
-       SetParams(['Subject', 'Message*']);
-     end;
-     2: // Subscribe
-     begin
-       SetParams(['Subject', 'Queue*']);
-     end;
-     3: // Unsubscribe
-     begin
-       SetParams(['Id', 'Max*']);
-     end;
+    0: // Publish
+      begin
+        SetParams(['Subject', 'Message']);
+      end;
+    1: // Request
+      begin
+        SetParams(['Subject', 'Message*']);
+      end;
+    2: // Subscribe
+      begin
+        SetParams(['Subject', 'Queue*']);
+      end;
+    3: // Unsubscribe
+      begin
+        SetParams(['Id', 'Max*']);
+      end;
   end;
 end;
 
@@ -282,7 +270,8 @@ begin
   lstSubscriptions.Clear;
   for LPair in FConnection.GetSubscriptionList do
   begin
-    lstSubscriptions.Items.Add(Format('%s (%d)', [LPair.Value.Subject, LPair.Key]));
+    lstSubscriptions.Items.Add(Format('%s (%d)', [LPair.Value.Subject,
+      LPair.Key]));
   end;
 end;
 
@@ -302,28 +291,28 @@ begin
   if FConnection.Connected then
     FConnection.Close
   else
-    FConnection.
-      SetChannel(edtHost.Text, StrToInt(edtPort.Text), 1000).
-      Open(
-        procedure (AInfo: TNatsServerInfo)
-        begin
-          TThread.Queue(TThread.Current,
-            procedure
-            begin
-              Log('Connected to server ' + AInfo.server_name);
+    FConnection.SetChannel(edtHost.Text, StrToInt(edtPort.Text), 1000).Open(
+      procedure(AInfo: TNatsServerInfo)
+      begin
+        TThread.Queue(TThread.Current,
+          procedure
+          begin
+            Log('Connected to server ' + AInfo.server_name);
 
-              lstServerInfo.Strings.Values['Server ID'] := AInfo.server_id;
-              lstServerInfo.Strings.Values['Server Name'] := AInfo.server_name;
-              lstServerInfo.Strings.Values['Server Version'] := AInfo.version;
-              lstServerInfo.Strings.Values['Protocol'] := AInfo.proto.ToString;
-              lstServerInfo.Strings.Values['Host'] := AInfo.host;
-              lstServerInfo.Strings.Values['Port'] := AInfo.port.ToString;
-              lstServerInfo.Strings.Values['Client ID'] := AInfo.client_id.ToString;
-              lstServerInfo.Strings.Values['Client IP'] := AInfo.client_ip;
-            end
-          );
-        end
-      );
+            FConnection.SetDefaultOptions('reel', 'deepleo');
+            FConnection.connect();
+
+            lstServerInfo.Strings.Values['Server ID'] := AInfo.server_id;
+            lstServerInfo.Strings.Values['Server Name'] := AInfo.server_name;
+            lstServerInfo.Strings.Values['Server Version'] := AInfo.version;
+            lstServerInfo.Strings.Values['Protocol'] := AInfo.proto.ToString;
+            lstServerInfo.Strings.Values['Host'] := AInfo.host;
+            lstServerInfo.Strings.Values['Port'] := AInfo.port.ToString;
+            lstServerInfo.Strings.Values['Client ID'] :=
+              AInfo.client_id.ToString;
+            lstServerInfo.Strings.Values['Client IP'] := AInfo.client_ip;
+          end);
+      end);
 end;
 
 end.

@@ -21,6 +21,7 @@ object frmConnection: TfrmConnection
     Align = alLeft
     Caption = ' Server '
     TabOrder = 0
+    ExplicitHeight = 352
     object lblServerInfo: TLabel
       Left = 16
       Top = 101
@@ -73,7 +74,7 @@ object frmConnection: TfrmConnection
       Width = 117
       Height = 23
       TabOrder = 2
-      Text = '127.0.0.1'
+      Text = '192.168.1.26'
     end
     object edtPort: TEdit
       Left = 139
@@ -92,6 +93,7 @@ object frmConnection: TfrmConnection
     Align = alLeft
     Caption = ' Commands '
     TabOrder = 1
+    ExplicitHeight = 352
     object lblCommandList: TLabel
       Left = 6
       Top = 25
@@ -170,8 +172,8 @@ object frmConnection: TfrmConnection
     Align = alClient
     Caption = ' Misc'
     TabOrder = 2
-    ExplicitLeft = 465
-    ExplicitWidth = 189
+    ExplicitWidth = 141
+    ExplicitHeight = 352
     object btnSimplePublish: TButton
       Left = 6
       Top = 46

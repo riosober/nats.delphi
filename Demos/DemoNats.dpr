@@ -20,7 +20,6 @@
 {                                                                              }
 {******************************************************************************}
 program DemoNats;
-
 uses
   Vcl.Forms,
   Demo.Form.Main in 'Demo.Form.Main.pas' {frmMain},
@@ -33,10 +32,10 @@ uses
   Nats.Entities in '..\Source\Nats.Entities.pas',
   Nats.Parser in '..\Source\Nats.Parser.pas',
   Nats.Monitor in '..\Source\Nats.Monitor.pas',
-  Nats.Classes in '..\Source\Nats.Classes.pas';
+  Nats.Classes in '..\Source\Nats.Classes.pas',
+  NATS.Wrapper in '..\Source\NATS.Wrapper.pas';
 
 {$R *.res}
-
 begin
   ReportMemoryLeaksOnShutdown := True;
   Application.Initialize;
