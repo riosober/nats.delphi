@@ -1,24 +1,24 @@
-{******************************************************************************}
-{                                                                              }
-{  NATS.Delphi: Delphi Client Library for NATS                                 }
-{  Copyright (c) 2022 Paolo Rossi                                              }
-{  https://github.com/paolo-rossi/nats.delphi                                  }
-{                                                                              }
-{******************************************************************************}
-{                                                                              }
-{  Licensed under the Apache License, Version 2.0 (the "License");             }
-{  you may not use this file except in compliance with the License.            }
-{  You may obtain a copy of the License at                                     }
-{                                                                              }
-{      http://www.apache.org/licenses/LICENSE-2.0                              }
-{                                                                              }
-{  Unless required by applicable law or agreed to in writing, software         }
-{  distributed under the License is distributed on an "AS IS" BASIS,           }
-{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    }
-{  See the License for the specific language governing permissions and         }
-{  limitations under the License.                                              }
-{                                                                              }
-{******************************************************************************}
+{ ****************************************************************************** }
+{ }
+{ NATS.Delphi: Delphi Client Library for NATS }
+{ Copyright (c) 2022 Paolo Rossi }
+{ https://github.com/paolo-rossi/nats.delphi }
+{ }
+{ ****************************************************************************** }
+{ }
+{ Licensed under the Apache License, Version 2.0 (the "License"); }
+{ you may not use this file except in compliance with the License. }
+{ You may obtain a copy of the License at }
+{ }
+{ http://www.apache.org/licenses/LICENSE-2.0 }
+{ }
+{ Unless required by applicable law or agreed to in writing, software }
+{ distributed under the License is distributed on an "AS IS" BASIS, }
+{ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{ See the License for the specific language governing permissions and }
+{ limitations under the License. }
+{ }
+{ ****************************************************************************** }
 unit NATS.Connection;
 
 interface
@@ -29,24 +29,24 @@ uses
   System.Classes, System.SysUtils, System.Rtti, System.SyncObjs,
   System.Generics.Defaults, System.Generics.Collections,
 
-  Nats.Classes,
-  Nats.Entities,
-  Nats.Parser,
-  Nats.Socket;
+  NATS.Classes,
+  NATS.Entities,
+  NATS.Parser,
+  NATS.Socket;
 
 type
   (*
-  INatsConnection = interface
-  ['{8630DB26-6324-4E33-8342-85BF42A34FC2}']
+    INatsConnection = interface
+    ['{8630DB26-6324-4E33-8342-85BF42A34FC2}']
     procedure Publish(const ASubject, AMessage: string);
     procedure Subscribe(const ASubject: string);
-  end;
+    end;
   *)
 
   TNatsConnection = class;
 
   /// <summary>
-  ///   Simple Id generator for subscription and inbox
+  /// Simple Id generator for subscription and inbox
   /// </summary>
   TNatsGenerator = class
   private
@@ -58,7 +58,7 @@ type
   end;
 
   /// <summary>
-  ///   Worker thread for reading incoming messages from the socket channel
+  /// Worker thread for reading incoming messages from the socket channel
   /// </summary>
   TNatsReader = class(TNatsThread)
   private
@@ -77,7 +77,7 @@ type
   end;
 
   /// <summary>
-  ///   Worker thread for processing incoming and outgoing messages
+  /// Worker thread for processing incoming and outgoing messages
   /// </summary>
   TNatsConsumer = class(TNatsThread)
   private
@@ -94,7 +94,7 @@ type
   end;
 
   /// <summary>
-  ///   Structure holding subscription metadata
+  /// Structure holding subscription metadata
   /// </summary>
   TNatsSubscription = class
     Id: Integer;
@@ -107,13 +107,14 @@ type
 
     constructor Create(AId: Integer; const ASubject: string; AHandler: TNatsMsgHandler); overload;
   end;
+
   TNatsSubscriptionPair = TPair<Integer, TNatsSubscription>;
   TNatsSubscriptions = TObjectDictionary<Integer, TNatsSubscription>;
 
   /// <summary>
-  ///   TNatsConnection represents a bidirectional channel to the NATS server.
-  ///   Message handler may be attached to each operation which is invoked when
-  ///   the operation is processed by the server
+  /// TNatsConnection represents a bidirectional channel to the NATS server.
+  /// Message handler may be attached to each operation which is invoked when
+  /// the operation is processed by the server
   /// </summary>
   TNatsConnection = class
   private
@@ -126,6 +127,7 @@ type
     FReadQueue: TNatsCommandQueue;
     FConnectHandler: TNatsConnectHandler;
     FDisconnectHandler: TNatsDisconnectHandler;
+    FAOptions: TNatsConnectOptions;
     procedure SendPing;
     procedure SendPong;
     procedure SendCommand(const ACommand: string); overload;
@@ -143,7 +145,7 @@ type
     procedure Close();
 
     procedure Ping();
-    procedure Connect(AOptions: TNatsConnectOptions); overload;
+    procedure Connect(); overload;
 
     procedure Publish(const ASubject, AMessage: string; const AReplyTo: string = '');
 
@@ -157,6 +159,7 @@ type
     procedure Unsubscribe(const ASubject: string; AMaxMsg: Cardinal = 0); overload;
 
     function GetSubscriptionList: TArray<TNatsSubscriptionPair>;
+    procedure SetDefaultOptions(const user, pass: string);
   public
     property Name: string read FName write FName;
     property Connected: Boolean read GetConnected;
@@ -170,25 +173,25 @@ type
 implementation
 
 uses
-  Nats.Consts,
-  Nats.Exceptions;
+  NATS.Consts,
+  NATS.Exceptions;
 
-procedure TNatsConnection.Connect(AOptions: TNatsConnectOptions);
+procedure TNatsConnection.Connect();
 begin
-  { TODO -opaolo -c : 07/06/2022 21:23:54 }
+  FChannel.SendString(Format('%s %s', [NatsConstants.Protocol.Connect, FAOptions.ToJSONString]))
 end;
 
-procedure TNatsConnection.Open(AConnectHandler: TNatsConnectHandler;
-    ADisconnectHandler: TNatsDisconnectHandler = nil);
+procedure TNatsConnection.Open(AConnectHandler: TNatsConnectHandler; ADisconnectHandler: TNatsDisconnectHandler = nil);
 begin
   FConnectHandler := AConnectHandler;
   FDisconnectHandler := ADisconnectHandler;
   FChannel.Open;
+  Connect();
 
-  FReader := TNatsReader.Create(Self);
+  FReader := TNatsReader.Create(self);
   FReader.Start;
 
-  FConsumer := TNatsConsumer.Create(Self);
+  FConsumer := TNatsConsumer.Create(self);
   FConsumer.Start;
 end;
 
@@ -298,7 +301,7 @@ end;
 
 procedure TNatsConnection.SendPing;
 begin
-  FChannel.SendString(NatsConstants.Protocol.PING);
+  FChannel.SendString(NatsConstants.Protocol.Ping);
 end;
 
 procedure TNatsConnection.SendPong;
@@ -319,7 +322,19 @@ begin
   FChannel.Host := AHost;
   FChannel.Port := APort;
   FChannel.Timeout := ATimeout;
-  Result := Self;
+  Result := self;
+end;
+
+procedure TNatsConnection.SetDefaultOptions(const user, pass: string);
+begin
+  FAOptions.user := user;
+  FAOptions.pass := pass;
+  FAOptions.name := 'nats-delphi';
+  FAOptions.Protocol := 0;
+  FAOptions.pedantic := False;
+  FAOptions.verbose := False;
+  FAOptions.version := '0.1.1';
+  FAOptions.lang := 'delphi';
 end;
 
 function TNatsConnection.Subscribe(const ASubject: string; AHandler: TNatsMsgHandler): Integer;
@@ -446,7 +461,7 @@ end;
 
 procedure TNatsReader.Execute;
 begin
-  NameThreadForDebugging(FConnection.Name + ' Reader');
+  NameThreadForDebugging(FConnection.name + ' Reader');
   try
     DoExecute;
   except
@@ -457,23 +472,23 @@ end;
 
 function TNatsGenerator.GetNewInbox: string;
 begin
-  TMonitor.Enter(Self);
+  TMonitor.Enter(self);
   try
     Inc(FInboxId);
     Result := 'inbox__' + FInboxId.ToString;
   finally
-    TMonitor.Exit(Self);
+    TMonitor.Exit(self);
   end;
 end;
 
 function TNatsGenerator.GetSubNextId: Cardinal;
 begin
-  TMonitor.Enter(Self);
+  TMonitor.Enter(self);
   try
     Inc(FSubId);
     Result := FSubId;
   finally
-    TMonitor.Exit(Self);
+    TMonitor.Exit(self);
   end;
 end;
 
@@ -482,8 +497,8 @@ end;
 function TNatsNetwork.NewConnection(const AName: string): TNatsConnection;
 begin
   Result := TNatsConnection.Create;
-  Result.Name := AName;
-  Self.Add(AName, Result);
+  Result.name := AName;
+  self.Add(AName, Result);
 end;
 
 { TNatsConsumer }
@@ -513,50 +528,50 @@ begin
     end;
 
     if LProcess then
-    case LCommand.CommandType of
-      TNatsCommandServer.INFO:
-      begin
-        { TODO -opaolo -c : read the TLSs parameters and (if) upgrade the connection 23/06/2022 11:00:44 }
-        if Assigned(FConnection.FConnectHandler) then
-          FConnection.FConnectHandler(LCommand.GetArgAsInfo.Info);
-      end;
+      case LCommand.CommandType of
+        TNatsCommandServer.INFO:
+          begin
+            { TODO -opaolo -c : read the TLSs parameters and (if) upgrade the connection 23/06/2022 11:00:44 }
+            if Assigned(FConnection.FConnectHandler) then
+              FConnection.FConnectHandler(LCommand.GetArgAsInfo.INFO);
+          end;
 
-      TNatsCommandServer.PING:
-      begin
-        FConnection.SendPong;
-      end;
+        TNatsCommandServer.Ping:
+          begin
+            FConnection.SendPong;
+          end;
 
-      TNatsCommandServer.PONG:
-      begin
-        { TODO -opaolo -c : Manage an handler set on the Ping? 23/06/2022 11:03:35 }
-      end;
+        TNatsCommandServer.PONG:
+          begin
+            { TODO -opaolo -c : Manage an handler set on the Ping? 23/06/2022 11:03:35 }
+          end;
 
-      TNatsCommandServer.MSG:
-      begin
-        if FConnection.FSubscriptions.TryGetValue(LCommand.GetArgAsMsg.Id, LSub) then
-        begin
-          LSub.Received := LSub.Received + 1;
-          if Assigned(LSub.Handler) then
-            LSub.Handler(LCommand.GetArgAsMsg);
+        TNatsCommandServer.MSG:
+          begin
+            if FConnection.FSubscriptions.TryGetValue(LCommand.GetArgAsMsg.Id, LSub) then
+            begin
+              LSub.Received := LSub.Received + 1;
+              if Assigned(LSub.Handler) then
+                LSub.Handler(LCommand.GetArgAsMsg);
 
-          if LSub.Remaining > -1 then
-            LSub.Remaining := LSub.Remaining - 1;
+              if LSub.Remaining > -1 then
+                LSub.Remaining := LSub.Remaining - 1;
 
-          if LSub.Remaining = 0 then
-            FConnection.FSubscriptions.Remove(LCommand.GetArgAsMsg.Id);
-        end;
-      end;
+              if LSub.Remaining = 0 then
+                FConnection.FSubscriptions.Remove(LCommand.GetArgAsMsg.Id);
+            end;
+          end;
 
-      TNatsCommandServer.OK:
-      begin
-        // Nothing to do here!
-      end;
+        TNatsCommandServer.OK:
+          begin
+            // Nothing to do here!
+          end;
 
-      TNatsCommandServer.ERR:
-      begin
-        { TODO -opaolo -c : After an ERR the server will disconnect: Reconnect 23/06/2022 10:58:11 }
-      end;
-    end
+        TNatsCommandServer.ERR:
+          begin
+            { TODO -opaolo -c : After an ERR the server will disconnect: Reconnect 23/06/2022 10:58:11 }
+          end;
+      end
     else
       Sleep(100);
   end;
@@ -564,7 +579,7 @@ end;
 
 procedure TNatsConsumer.Execute;
 begin
-  NameThreadForDebugging(FConnection.Name + ' Consumer');
+  NameThreadForDebugging(FConnection.name + ' Consumer');
   try
     DoExecute;
   except

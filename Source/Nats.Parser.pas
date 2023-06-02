@@ -1,24 +1,24 @@
-{******************************************************************************}
-{                                                                              }
-{  NATS.Delphi: Delphi Client Library for NATS                                 }
-{  Copyright (c) 2022 Paolo Rossi                                              }
-{  https://github.com/paolo-rossi/nats.delphi                                  }
-{                                                                              }
-{******************************************************************************}
-{                                                                              }
-{  Licensed under the Apache License, Version 2.0 (the "License");             }
-{  you may not use this file except in compliance with the License.            }
-{  You may obtain a copy of the License at                                     }
-{                                                                              }
-{      http://www.apache.org/licenses/LICENSE-2.0                              }
-{                                                                              }
-{  Unless required by applicable law or agreed to in writing, software         }
-{  distributed under the License is distributed on an "AS IS" BASIS,           }
-{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    }
-{  See the License for the specific language governing permissions and         }
-{  limitations under the License.                                              }
-{                                                                              }
-{******************************************************************************}
+{ ****************************************************************************** }
+{ }
+{ NATS.Delphi: Delphi Client Library for NATS }
+{ Copyright (c) 2022 Paolo Rossi }
+{ https://github.com/paolo-rossi/nats.delphi }
+{ }
+{ ****************************************************************************** }
+{ }
+{ Licensed under the Apache License, Version 2.0 (the "License"); }
+{ you may not use this file except in compliance with the License. }
+{ You may obtain a copy of the License at }
+{ }
+{ http://www.apache.org/licenses/LICENSE-2.0 }
+{ }
+{ Unless required by applicable law or agreed to in writing, software }
+{ distributed under the License is distributed on an "AS IS" BASIS, }
+{ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{ See the License for the specific language governing permissions and }
+{ limitations under the License. }
+{ }
+{ ****************************************************************************** }
 unit NATS.Parser;
 
 interface
@@ -28,8 +28,8 @@ interface
 uses
   System.SysUtils, System.Rtti, System.Generics.Collections,
 
-  Nats.Entities,
-  Nats.Classes;
+  NATS.Entities,
+  NATS.Classes;
 
 type
   TNatsParser = class
@@ -44,8 +44,8 @@ type
 implementation
 
 uses
-  Nats.Consts,
-  Nats.Exceptions;
+  NATS.Consts,
+  NATS.Exceptions;
 
 { TNatsParser }
 
@@ -113,19 +113,19 @@ begin
   LSplit := ACommand.Split([NatsConstants.SPC]);
   case Length(LSplit) of
     4:
-    begin
-      LArg.Subject := LSplit[1];
-      LArg.Id := LSplit[2].ToInteger;
-      LArg.ReplyTo := '';
-      LArg.Bytes := LSplit[3].ToInteger;
-    end;
+      begin
+        LArg.Subject := LSplit[1];
+        LArg.Id := LSplit[2].ToInteger;
+        LArg.ReplyTo := '';
+        LArg.Bytes := LSplit[3].ToInteger;
+      end;
     5:
-    begin
-      LArg.Subject := LSplit[1];
-      LArg.Id := LSplit[2].ToInteger;
-      LArg.ReplyTo := LSplit[3];
-      LArg.Bytes := LSplit[4].ToInteger;
-    end;
+      begin
+        LArg.Subject := LSplit[1];
+        LArg.Id := LSplit[2].ToInteger;
+        LArg.ReplyTo := LSplit[3];
+        LArg.Bytes := LSplit[4].ToInteger;
+      end;
   else
     raise ENatsException.Create('Malformed NATS command received (MSG)');
   end;

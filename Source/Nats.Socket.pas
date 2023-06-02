@@ -1,24 +1,24 @@
-{******************************************************************************}
-{                                                                              }
-{  NATS.Delphi: Delphi Client Library for NATS                                 }
-{  Copyright (c) 2022 Paolo Rossi                                              }
-{  https://github.com/paolo-rossi/nats.delphi                                  }
-{                                                                              }
-{******************************************************************************}
-{                                                                              }
-{  Licensed under the Apache License, Version 2.0 (the "License");             }
-{  you may not use this file except in compliance with the License.            }
-{  You may obtain a copy of the License at                                     }
-{                                                                              }
-{      http://www.apache.org/licenses/LICENSE-2.0                              }
-{                                                                              }
-{  Unless required by applicable law or agreed to in writing, software         }
-{  distributed under the License is distributed on an "AS IS" BASIS,           }
-{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    }
-{  See the License for the specific language governing permissions and         }
-{  limitations under the License.                                              }
-{                                                                              }
-{******************************************************************************}
+{ ****************************************************************************** }
+{ }
+{ NATS.Delphi: Delphi Client Library for NATS }
+{ Copyright (c) 2022 Paolo Rossi }
+{ https://github.com/paolo-rossi/nats.delphi }
+{ }
+{ ****************************************************************************** }
+{ }
+{ Licensed under the Apache License, Version 2.0 (the "License"); }
+{ you may not use this file except in compliance with the License. }
+{ You may obtain a copy of the License at }
+{ }
+{ http://www.apache.org/licenses/LICENSE-2.0 }
+{ }
+{ Unless required by applicable law or agreed to in writing, software }
+{ distributed under the License is distributed on an "AS IS" BASIS, }
+{ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{ See the License for the specific language governing permissions and }
+{ limitations under the License. }
+{ }
+{ ****************************************************************************** }
 unit Nats.Socket;
 
 interface
@@ -28,7 +28,7 @@ uses
 
 type
   INatsSocket = interface
-  ['{B97D9A0E-50CD-40B3-ACA2-CC925FC40FBC}']
+    ['{B97D9A0E-50CD-40B3-ACA2-CC925FC40FBC}']
     // Property Getters
     function GetConnected: Boolean;
     function GetHost: string;
@@ -88,7 +88,6 @@ type
     class procedure Register<T: TNatsSocket>(const AName: string; ADefault: Boolean); static;
   end;
 
-
 implementation
 
 uses
@@ -138,7 +137,8 @@ begin
   if AName = '' then
     LClass := LSelf.GetDefaultClass()
   else if not LSelf.TryGetValue(AName, LClass) then
-    raise ENatsException.CreateFmt('Get: socket class [%s] not registered (add "Nats.Socket.*" unit to the project)', [AName]);
+    raise ENatsException.CreateFmt
+      ('Get: socket class [%s] not registered (add "Nats.Socket.*" unit to the project)', [AName]);
 
   Result := LClass.Create;
 end;
