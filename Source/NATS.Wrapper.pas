@@ -8,11 +8,11 @@ uses
 
 type
   TNATSCommander = record
-    seq: integer;
-    reply: string;
-    subject: string;
-    cmd: string;
-    data: string;
+    seq: integer; // command seq
+    reply: string; // command package for recv stable reply subject
+    subject: string; // subject to send
+    cmd: string; // command name
+    data: string; // biz data
     function ToJSONString: string;
     class function FromJSONString(const AValue: string): TNATSCommander; static;
   end;
@@ -21,10 +21,7 @@ type
   end;
 
   {
-    TNatsMsgHandler = reference to procedure(const AMsg: TNatsArgsMSG);
-    TNatsPingHandler = reference to procedure();
-    TNatsConnectHandler = reference to procedure(AInfo: TNatsServerInfo);
-    TNatsDisconnectHandler = reference to procedure();
+    Data package like a Command for user Interface;
   }
   TNATSCommandHandler = reference to procedure(const ACmd: TNATSCommander);
 
@@ -120,9 +117,11 @@ type
     procedure Subscribe(ASubject: string; AMsgHandler: TNATSCommandHandler);
     procedure USubScribe(ASubject: string);
     procedure Publish(const ASubject, ACmd: string; const AData: string = '');
+    procedure SendCommand(const ACmd: TNATSCommander);
     property Error: String Read FError write FError;
   End;
 
+  // command generate/restore API
 function get_commander(subject: string; cmd: string; data: string): TNATSCommander;
 function restore_commander(subject: string; cmd_data: string): TNATSCommander;
 
@@ -317,7 +316,7 @@ end;
 
 procedure TBizMQProcessor.DeleteResendMsg(msg: TNATSCommander);
 var
-  i, pass_t: integer;
+  i: integer;
   rMsg: TNATSMessageRecord;
 begin
   TMonitor.Enter(FReSendMessages);
@@ -325,11 +324,11 @@ begin
     for i := FReSendMessages.Count - 1 downto 0 do
     begin
       rMsg := FReSendMessages.Items[i];
-      //OutputDebugString(PWideChar('删除重发：' + rMsg.id + '==?' + msg.cmd));
+      // OutputDebugString(PWideChar('删除重发：' + rMsg.id + '==?' + msg.cmd));
       if rMsg.id = msg.cmd then
       begin
         FReSendMessages.Remove(rMsg);
-        OutputDebugString(PWideChar('删除重发：' + rMsg.msg.ToJSONString));
+        OutputDebugString(PWideChar('deleting re-send queue msg：' + rMsg.msg.ToJSONString));
         break;
       end;
     end;
@@ -377,7 +376,7 @@ begin
   try
     ACmd := restore_commander(AMsg.subject, AMsg.Payload);
     FRecvMessages.Add(ACmd);
-    OutputDebugString(PWideChar('收到消息：' + ACmd.ToJSONString));
+    OutputDebugString(PWideChar('Recv Message:' + ACmd.ToJSONString));
   finally
     TMonitor.exit(FRecvMessages);
   end;
@@ -388,13 +387,8 @@ procedure TBizMQProcessor.Publish(const ASubject, ACmd: String; const AData: str
 var
   BCmd: TNATSCommander;
 begin
-  TMonitor.Enter(FSendMessages);
-  try
-    BCmd := get_commander(ASubject, ACmd, AData);
-    FSendMessages.Add(BCmd);
-  finally
-    TMonitor.exit(FSendMessages)
-  end;
+  BCmd := get_commander(ASubject, ACmd, AData);
+  self.SendCommand(BCmd);
 end;
 
 procedure TBizMQProcessor.RecordSendStatus(msg: TNATSCommander);
@@ -411,7 +405,7 @@ begin
       rMsg.tick := GetTickCount();
       rMsg.msg := msg;
       FReSendMessages.Add(rMsg);
-      OutputDebugString(PWideChar('记录重发：' + rMsg.msg.ToJSONString + ' ' + rMsg.id))
+      OutputDebugString(PWideChar('Record resend command:' + rMsg.msg.ToJSONString + ' ' + rMsg.id))
     finally
       TMonitor.exit(FReSendMessages);
     end;
@@ -435,7 +429,7 @@ begin
       // 超时或者重启过，丢弃
       if (pass_t > 300 * 1000) or (rMsg.msg.seq > cmd_seq_obj.FCmd_Sequence) then
       begin
-        OutputDebugString(PWideChar('超时删除重发：' + rMsg.msg.ToJSONString));
+        OutputDebugString(PWideChar('Delete resend queue data for timeout:：' + rMsg.msg.ToJSONString));
         continue;
       end;
       // 10秒发一次
@@ -443,13 +437,24 @@ begin
       begin
         rMsg.tick := GetTickCount();
         FNATS.Publish_One(rMsg.msg.subject, rMsg.msg.ToJSONString);
-        OutputDebugString(PWideChar('重发：' + rMsg.msg.ToJSONString))
+        OutputDebugString(PWideChar('Resending: ' + rMsg.msg.ToJSONString))
       end;
       FReSendMessages.Add(rMsg);
     end;
   finally
     TMonitor.exit(FReSendMessages);
   end;
+end;
+
+procedure TBizMQProcessor.SendCommand(const ACmd: TNATSCommander);
+begin
+  TMonitor.Enter(FSendMessages);
+  try
+    FSendMessages.Add(ACmd);
+  finally
+    TMonitor.exit(FSendMessages)
+  end;
+
 end;
 
 procedure TBizMQProcessor.Subscribe(ASubject: string; AMsgHandler: TNATSCommandHandler);
@@ -461,7 +466,6 @@ begin
     subs.subject := ASubject;
     subs.MsgHandler := AMsgHandler;
     subs.id := FNATS.Subscribe_One(ASubject, self.OnMessage);
-    TMonitor.Enter(FSubscribes);
     FSubscribes.Add(subs);
   finally
     TMonitor.exit(FSubscribes)
@@ -535,7 +539,7 @@ begin
               if Assigned(sub.MsgHandler) = True then
               begin
                 sub.MsgHandler(msg);
-                OutputDebugString(PWideChar('CALL消息EVENT：' + msg.ToJSONString))
+                OutputDebugString(PWideChar('Call MsgHandler():' + msg.ToJSONString))
               end;
             end;
           end;
@@ -552,7 +556,7 @@ begin
           FSendMessages.Remove(msg);
           // 发包
           FNATS.Publish_One(msg.subject, msg.ToJSONString());
-          OutputDebugString(PWideChar('发送消息：' + msg.ToJSONString));
+          OutputDebugString(PWideChar('Send message:' + msg.ToJSONString));
           // 记录
           self.RecordSendStatus(msg);
         end;
@@ -561,9 +565,9 @@ begin
       end;
       // 处理消息重发
       self.ResendMessage();
-      sleep(1000);
-      OutputDebugString(PWideChar('数值：' + IntToStr(FRecvMessages.Count) + '/' + IntToStr(FReRecvMessages.Count) + '/' +
-        IntToStr(FSendMessages.Count) + '/' + IntToStr(FReSendMessages.Count) + '/' + IntToStr(FSubscribes.Count)));
+      sleep(300);
+      OutputDebugString(PWideChar(format('Queue Count:%d / %d / %d / %d / %d', [FRecvMessages.Count, FReRecvMessages.Count,
+        FSendMessages.Count, FReSendMessages.Count, FSubscribes.Count])));
     except
       on e: Exception do
         Error := e.Message;
@@ -588,13 +592,13 @@ var
   i: integer;
   sub: TNATSSubscribeRecord;
 begin
-  // TMonitor.Enter(FSubscribes);
+  TMonitor.Enter(FSubscribes);
   try
     Result.MsgHandler := Nil;
     for i := FSubscribes.Count - 1 downto 0 do
     begin
       sub := FSubscribes.Items[i];
-      OutputDebugString(PWideChar('查找SUB：' + sub.subject + '==?' + subject));
+      OutputDebugString(PWideChar('search SUB：' + sub.subject + '==?' + subject));
       if sub.subject = subject then
       begin
         Result := sub;
@@ -602,7 +606,7 @@ begin
       end;
     end;
   finally
-    // TMonitor.exit(FSubscribes);
+    TMonitor.exit(FSubscribes);
   end;
 end;
 
@@ -622,7 +626,7 @@ begin
       rMsg := FReRecvMessages.Items[0];
       if rMsg.id = msg_id then
       begin
-        OutputDebugString(PWideChar(IntToStr(FReRecvMessages.Count) + '重复接收的消息：' + msg.ToJSONString));
+        OutputDebugString(PWideChar(IntToStr(FReRecvMessages.Count) + 'Ignore duplicate message:' + msg.ToJSONString));
         Result := True; // 消息已经存在，去除
       end;
       // 超过10分钟的清除掉
@@ -636,7 +640,8 @@ begin
     rMsg.id := msg_id;
     rMsg.tick := GetTickCount();
     FReRecvMessages.Add(rMsg);
-    OutputDebugString(PWideChar(IntToStr(FReRecvMessages.Count) + '入重复接收消息队：' + msg.ToJSONString + ' ' + msg_id));
+    OutputDebugString(PWideChar(IntToStr(FReRecvMessages.Count) + 'EnQueue Msg for De-duplicate received: ' +
+      msg.ToJSONString + ' ' + msg_id));
   finally
     TMonitor.exit(FReRecvMessages)
   end;
