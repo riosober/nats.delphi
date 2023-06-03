@@ -2298,22 +2298,31 @@ object frmMain: TfrmMain
           ExplicitTop = 76
         end
         object Button1: TButton
-          Left = 64
+          Left = 166
           Top = 296
           Width = 75
           Height = 25
-          Caption = 'Button1'
+          Caption = 'Wrapper.Sub'
           TabOrder = 0
           OnClick = Button1Click
         end
         object Button2: TButton
-          Left = 192
+          Left = 272
           Top = 296
           Width = 75
           Height = 25
-          Caption = 'Button2'
+          Caption = 'Wrapper.Pub'
           TabOrder = 1
           OnClick = Button2Click
+        end
+        object Button3: TButton
+          Left = 16
+          Top = 296
+          Width = 129
+          Height = 25
+          Caption = 'Wrapper.Connect'
+          TabOrder = 2
+          OnClick = Button3Click
         end
       end
     end

@@ -27,7 +27,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   System.Generics.Collections, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, IdBaseComponent, IdComponent, IdTCPConnection,
   IdTCPClient, Vcl.StdCtrls, Vcl.ExtCtrls, Demo.Form.Connection, Nats.Consts, Nats.Entities, Nats.Connection,
-  Vcl.ComCtrls, Vcl.Imaging.pngimage, Nats.Wrapper;
+  Vcl.ComCtrls, Vcl.Imaging.pngimage, NATS.Wrapper;
 
 type
   TfrmMain = class(TForm)
@@ -43,12 +43,14 @@ type
     Button1: TButton;
     Button2: TButton;
     Timer1: TTimer;
+    Button3: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnNewConnectionClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
     FCommands: TArrayNATSCommander;
     FIndexMsg: Integer;
@@ -77,12 +79,16 @@ begin
   SingletonNATSObject.Publish('echo', 'hello', '{"a":1,"b":"string"}')
 end;
 
+procedure TfrmMain.Button3Click(Sender: TObject);
+begin
+  SingletonNATSObject := TBizMQProcessor.Create('127.0.0.1', 4222, 'reel', 'deepleo');
+end;
+
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
   FIndexMsg := 0;
   Color := RGB(Random(255), Random(255), Random(255));
   FCommands := TArrayNATSCommander.Create;
-  SingletonNATSObject := TBizMQProcessor.Create('127.0.0.1', 4222, 'reel', 'deepleo');
 end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);
