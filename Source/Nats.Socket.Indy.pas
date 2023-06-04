@@ -41,6 +41,7 @@ type
     procedure SetHost(const Value: string); override;
     procedure SetPort(const Value: Integer); override;
     procedure SetTimeout(const Value: Cardinal); override;
+    procedure checkMaxIntReadLen();
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -58,6 +59,12 @@ type
 implementation
 
 { TNatsSocketIndy }
+
+procedure TNatsSocketIndy.checkMaxIntReadLen;
+begin
+  if FClient.IOHandler.MaxLineLength < MaxInt then
+    FClient.IOHandler.MaxLineLength := MaxInt;
+end;
 
 procedure TNatsSocketIndy.Close;
 begin
@@ -104,23 +111,27 @@ function TNatsSocketIndy.ReceiveBytes: TBytes;
 var
   LRes: string;
 begin
+  checkMaxIntReadLen();
   LRes := FClient.IOHandler.ReadLn(IndyTextEncoding_UTF8);
   Result := TEncoding.UTF8.GetBytes(LRes);
 end;
 
 function TNatsSocketIndy.ReceiveString: string;
 begin
+  checkMaxIntReadLen();
   Result := FClient.IOHandler.ReadLn(NatsConstants.CR_LF, IndyTextEncoding_UTF8);
 end;
 
 procedure TNatsSocketIndy.SendBytes(const AValue: TBytes);
 begin
+  checkMaxIntReadLen();
   FClient.IOHandler.Write(TIdBytes(AValue));
   FClient.IOHandler.Write(NatsConstants.CR_LF);
 end;
 
 procedure TNatsSocketIndy.SendString(const AValue: string);
 begin
+  checkMaxIntReadLen();
   FClient.IOHandler.Write(AValue, IndyTextEncoding_UTF8);
   FClient.IOHandler.Write(NatsConstants.CR_LF);
 end;
